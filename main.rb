@@ -2,6 +2,7 @@
 
 require 'json'
 
+links_only = !ARGV.include?('--formatted')
 main_branch = if ARGV[1]
                 ARGV[1]
               else
@@ -21,11 +22,11 @@ end
 pull_requests_with_dependency = dependency_hash #.select { |_key, value| value['dependents'].size.positive? }
 
 class DepthFirstSearch
-  attr_accessor :nodes, :visited
 
-  def initialize(nodes)
+  def initialize(nodes, links_only: true)
     @nodes = nodes
     @visited = Hash.new { |hash, key| hash[key] = {} }
+    @links_only = links_only
   end
 
   def execute(starting_node)
@@ -36,7 +37,11 @@ class DepthFirstSearch
   end
 
   def search(current_node, level)
-    puts "#{'    ' * level}- [#{current_node}](#{nodes[current_node]['url']})" if nodes[current_node]['dependents'].size.positive? || level > 1
+    if links_only
+      puts "#{'    ' * [level - 1, 0].max}- #{nodes[current_node]['url']}<!-- #{current_node} -->" if nodes[current_node]['dependents'].size.positive? || level > 1
+    else
+      puts "#{'    ' * level}- [#{current_node}](#{nodes[current_node]['url']})" if nodes[current_node]['dependents'].size.positive? || level > 1
+    end
     visited[current_node][:dfs_in] = true
     nodes[current_node]['dependents'].each do |dependent_node|
       raise "Redundant dependency between #{current_node} AND #{dependent_node}" if visited[dependent_node][:dfs_in]
@@ -50,6 +55,11 @@ class DepthFirstSearch
   def can_enter_node?(node)
     !visited[node][:dfs_out]
   end
+
+  private
+
+  attr_accessor :nodes, :visited, :links_only
+
 end
 
-DepthFirstSearch.new(pull_requests_with_dependency).execute(main_branch)
+DepthFirstSearch.new(pull_requests_with_dependency, links_only: links_only).execute(main_branch)
