@@ -2,6 +2,8 @@
 
 require 'json'
 
+STATE_OPEN = "OPEN"
+
 links_only = !ARGV.include?('--formatted')
 main_branch = if ARGV[1]
                 ARGV[1]
@@ -9,9 +11,10 @@ main_branch = if ARGV[1]
                 puts "Branch not specified. Using master"
                 'master'
               end
-github_cli_output = `gh pr list -L 999 --json baseRefName,headRefName,url`
-json = JSON.parse(github_cli_output)
-initial_object = Hash.new { |hash, key| hash[key] = {'dependents' => []} }
+open_prs = JSON.parse(`gh pr list --state open -L 40000 --json baseRefName,headRefName,url,state`)
+merged_prs = JSON.parse(`gh pr list --state merged -L 40000 --json baseRefName,headRefName,url,state --search "-base:master"`)
+json = open_prs + merged_prs
+initial_object = Hash.new { |hash, key| hash[key] = { 'dependents' => [] } }
 dependency_hash = json.each_with_object(initial_object) do |pull_request_data, object|
   head_branch = pull_request_data['headRefName']
   base_branch = pull_request_data['baseRefName']
@@ -30,26 +33,39 @@ class DepthFirstSearch
   end
 
   def execute(starting_node)
-    search(starting_node, 0)
+    string = search(starting_node, 0, any_open_pr_in_this_branch: false)
+    puts "- #{starting_node}\n#{string}"
     # nodes.keys.each do |branch|
     #   search(branch, 0) if can_enter_node?(branch)
     # end
   end
 
-  def search(current_node, level)
-    if links_only
-      puts "#{'    ' * [level - 1, 0].max}- #{nodes[current_node]['url']}<!-- #{current_node} -->" if nodes[current_node]['dependents'].size.positive? || level > 1
-    else
-      puts "#{'    ' * level}- [#{current_node}](#{nodes[current_node]['url']})" if nodes[current_node]['dependents'].size.positive? || level > 1
-    end
+  def search(current_node, level, any_open_pr_in_this_branch:)
     visited[current_node][:dfs_in] = true
-    nodes[current_node]['dependents'].each do |dependent_node|
-      raise "Redundant dependency between #{current_node} AND #{dependent_node}" if visited[dependent_node][:dfs_in]
+    new_any_open_pr_in_this_branch = any_open_pr_in_this_branch || nodes[current_node]['state'] == STATE_OPEN
 
-      search(dependent_node, level + 1) if can_enter_node?(dependent_node)
+    dependents_strings = nodes[current_node]['dependents'].map do |dependent_node|
+      if visited[dependent_node][:dfs_in]
+        puts "Redundant dependency between #{current_node} AND #{dependent_node}"
+        next
+      end
+
+      search(dependent_node, level + 1, any_open_pr_in_this_branch: new_any_open_pr_in_this_branch) if can_enter_node?(dependent_node)
     end
+    dependents_strings = dependents_strings.compact.join("\n")
+
     visited[current_node][:dfs_out] = true
     visited[current_node][:dfs_in] = false
+
+    return nil if !new_any_open_pr_in_this_branch && dependents_strings.empty?
+
+    current_node_string = if links_only
+                            "#{'    ' * [level - 1, 0].max}- #{nodes[current_node]['url']}<!-- #{current_node} -->" if nodes[current_node]['dependents'].size.positive? || level > 1
+                          else
+                            "#{'    ' * level}- [#{current_node}](#{nodes[current_node]['url']})" if nodes[current_node]['dependents'].size.positive? || level > 1
+                          end
+    return current_node_string if dependents_strings.empty?
+    "#{current_node_string}\n#{dependents_strings}"
   end
 
   def can_enter_node?(node)
