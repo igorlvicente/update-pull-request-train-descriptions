@@ -29,3 +29,4 @@ Just create a Pull Request. It's better to try to explain what it does, but that
   - ~~Example: `pr-train --template "Custom Template for [Pull Request]({{link}}) to {{base_branch}} on {{repo_name}}"`~~
 - Change `pr-train` to update pull request descriptions
 - `pr-train --dry-run` to not update pull request descriptions and only print what would have been added to it
+- Configurable default template/format
