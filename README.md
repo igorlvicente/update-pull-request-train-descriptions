@@ -24,9 +24,11 @@ Just create a Pull Request. It's better to try to explain what it does, but that
 # To be done
 - Change `pr-train` to show only the Pull Request train of your current branch
 - `pr-train --all` to show all Pull Request trains
+  > This is the current behaviour, but as we will change it to show only the PRs of the tree you are in, we will need the `--all` option
 - Turn script into a gem to be installed without the need to clone and change `PATH` environment variable
 - ~~Create templates for the printing of each pull request~~ **Done**
   - ~~Example: `pr-train --template "Custom Template for [Pull Request]({{link}}) to {{base_branch}} on {{repo_name}}"`~~
 - Change `pr-train` to update pull request descriptions
 - `pr-train --dry-run` to not update pull request descriptions and only print what would have been added to it
+  > This is the current behaviour, but as we will change it to update the PRs, we will need the `--dry-run` option
 - Configurable default template/format
