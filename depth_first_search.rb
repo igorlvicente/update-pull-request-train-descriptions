@@ -44,7 +44,7 @@ class DepthFirstSearch
     return nil if dependent_nodes.empty? && level <= 1
 
     filled_template = options.template.gsub('{{url}}', nodes[current_node]['url']).gsub('{{branch}}', current_node_name)
-    current_node_string = "#{'    ' * level}#{filled_template}"
+    current_node_string = "#{'    ' * [level - 1, 0].max}#{filled_template}"
 
     # If has no dependent, print only itself (and no \n)
     return current_node_string if dependents_strings.empty?

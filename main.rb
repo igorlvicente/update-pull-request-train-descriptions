@@ -37,7 +37,7 @@ dependency_hash = json.each_with_object(initial_object) do |pull_request_data, o
   object
 end
 
-options.base_branches.each do |base_branch|
-  puts "<!-- PULL REQUEST TRAIN FROM THE BASE BRANCH #{base_branch} -->"
-  puts DepthFirstSearch.new(dependency_hash, options: options).execute(base_branch)
-end
+output = options.base_branches.map do |base_branch|
+  "<!-- PULL REQUEST TRAIN FROM THE BASE BRANCH #{base_branch} -->\n#{DepthFirstSearch.new(dependency_hash, options: options).execute(base_branch)}"
+end.join("\n\n")
+puts output
