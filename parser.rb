@@ -1,4 +1,9 @@
+# frozen_string_literal: true
 # Parse ARGV options and return a OpenStruct with it.
+
+require 'ostruct'
+require 'optparse'
+
 class Parser
 
   def self.parse(args)

@@ -1,14 +1,19 @@
 # frozen_string_literal: true
 
+require 'bundler/inline'
+
+gemfile do
+  source 'https://rubygems.org'
+  gem 'optparse'
+end
+
 require 'json'
-require 'optparse'
 require_relative './parser'
 require_relative './depth_first_search'
 
-
 options = Parser.parse(ARGV)
 
-pr_limits = 40000
+pr_limits = 40_000
 pr_attributes = 'baseRefName,headRefName,url,state'
 
 debug_string = "gh pr list --state open -L #{pr_limits} --json #{pr_attributes}"
